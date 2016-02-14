@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+	<!-- place holder config resource -->
+	<bean id="placeholderConfig"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>classpath:key.properties</value>
+			</list>
+		</property>
+	</bean>
+	
+	<!-- kanban -->
+	<bean id="kanban" class="summ.btc.btclock.Kanban" 
+		init-method="init" destroy-method="release" >
+	</bean>
+    
+	<!-- Trader -->
+	<bean id="okcoinTrader" class="summ.btc.btclock.okcoin.OkcoinTrader"
+		init-method="init">
+		<property name="apiKey" value="${btclock.okcoin._all_.apiKey}"/>
+		<property name="secretKey" value="${btclock.okcoin._all_.secretKey}"/>
+		<property name="urlPrex" value="${btclock.okcoin.OkcoinTrader.urlPrex}"/>
+	</bean>
+	
+	<!-- okcoinMarketProbe -->
+	<bean id="okcoinMarketProbe" class="summ.btc.btclock.okcoin.OkcoinMarketProbe"
+		 init-method="init">
+		<property name="apiKey" value="${btclock.okcoin._all_.apiKey}"/>
+		<property name="secretKey" value="${btclock.okcoin._all_.secretKey}"/>
+		<property name="url" value="${btclock.okcoin.OkcoinMarketProbe.url}"/>
+		<property name="kanban" ref="kanban"/>
+	</bean>
+	
+</beans>
