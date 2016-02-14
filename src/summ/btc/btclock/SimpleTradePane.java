@@ -31,6 +31,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 
@@ -57,13 +58,14 @@ public class SimpleTradePane {
 	static JPanel middlePanel;
 	static JPanel bottomPanel;
 	static BidAskPanel bidAskPanel;
+	static JTextField amountTf;
 	static Tradable trader;
 	static Kanban kanban;
 	static MarketProbable marketProbe;
 	static DefaultTableModel tableModel;
 	static DefaultTableModel lftModel;
 	static DefaultTableModel rgtModel;
-	static String tradeAmount = "0.090";
+	static String tradeAmount = "0.096";
 
     //    static JPanel middlePanel;
 
@@ -128,8 +130,8 @@ public class SimpleTradePane {
 			}
 			TradeOrder to = d.bidList.get(0);
 			System.out.println("买入价：" + to.getSubmitPrice() + " 买入量："
-					+ tradeAmount);
-    		trader.buy(to.getSubmitPrice(), tradeAmount);
+					+ amountTf.getText());
+    		trader.buy(to.getSubmitPrice(), amountTf.getText());
     	}catch(RuntimeException re){
 //            Toolkit.getDefaultToolkit().beep();
             JOptionPane.showMessageDialog(topPanel, re.getMessage(), "ERROR_MESSAGE", JOptionPane.ERROR_MESSAGE);
@@ -151,8 +153,8 @@ public class SimpleTradePane {
 			}
 			TradeOrder to = d.askList.get(0);
 			System.out.println("买入价：" + to.getSubmitPrice() + " 买入量："
-					+ tradeAmount);
-    		trader.buy(to.getSubmitPrice(), tradeAmount);
+					+ amountTf.getText());
+    		trader.buy(to.getSubmitPrice(), amountTf.getText());
     	}catch(RuntimeException re){
 //            Toolkit.getDefaultToolkit().beep();
             JOptionPane.showMessageDialog(topPanel, re.getMessage(), "ERROR_MESSAGE", JOptionPane.ERROR_MESSAGE);
@@ -174,9 +176,9 @@ public class SimpleTradePane {
 			}
 			TradeOrder to = d.bidList.get(0);
 			System.out.println("卖出价：" + to.getSubmitPrice() + " 卖出量："
-					+ tradeAmount);
-			trader.sell(to.getSubmitPrice(), tradeAmount);
-//			trader.sell("5000.00", tradeAmount);
+					+ amountTf.getText());
+			trader.sell(to.getSubmitPrice(), amountTf.getText());
+//			trader.sell("5000.00", amountTf.getText());
 		} catch (RuntimeException re) {
 			// Toolkit.getDefaultToolkit().beep();
 			JOptionPane.showMessageDialog(topPanel, re.getMessage(),
@@ -199,9 +201,9 @@ public class SimpleTradePane {
 			}
 			TradeOrder to = d.askList.get(0);
 			System.out.println("卖出价：" + to.getSubmitPrice() + " 卖出量："
-					+ tradeAmount);
-			trader.sell(to.getSubmitPrice(), tradeAmount);
-//			trader.sell("5000.00", tradeAmount);
+					+ amountTf.getText());
+			trader.sell(to.getSubmitPrice(), amountTf.getText());
+//			trader.sell("5000.00", amountTf.getText());
 		} catch (RuntimeException re) {
 			// Toolkit.getDefaultToolkit().beep();
 			JOptionPane.showMessageDialog(topPanel, re.getMessage(),
@@ -435,6 +437,11 @@ public class SimpleTradePane {
         topPanel.add(buttonPanel);
         topPanel.add(Box.createVerticalStrut(10));//10px高空白
         topPanel.add(bidAskPanel);
+        topPanel.add(Box.createVerticalStrut(10));//10px高空白
+        amountTf=new JTextField();
+        amountTf.setPreferredSize(new Dimension(100, 30));
+        amountTf.setText(tradeAmount);
+        topPanel.add(amountTf);
         //        topPanel.add
         //        topPanel.setBorder(BorderFactory.createLineBorder(Color.green, 3));
         TitledBorder border = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "TOP操作区域");
