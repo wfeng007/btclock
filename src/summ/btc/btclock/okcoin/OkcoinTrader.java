@@ -4,7 +4,10 @@
 package summ.btc.btclock.okcoin;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.Date;
 
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.lang.StringUtils;
@@ -15,7 +18,10 @@ import com.okcoin.rest.stock.IStockRestApi;
 import com.okcoin.rest.stock.impl.StockRestApi;
 
 import summ.btc.btclock.Tradable;
+import summ.btc.btclock.data.CurrencyTypeEnum;
 import summ.btc.btclock.data.TradeOrder;
+import summ.btc.btclock.data.TradeOrderStatusEnum;
+import summ.btc.btclock.data.TradeTypeEnum;
 
 /**
  * @author wfeng007
@@ -51,14 +57,14 @@ public class OkcoinTrader implements Tradable {
 			throw new RuntimeException(e.getMessage(), e);
 		} 
 	}
+	
+	
 	/*
 	 * 
 	 */
 	private TradeOrder parseRs(String reStr){
-		
 		//reStr类似：{"result":true,"order_id":123456}
 		//reStr错误返回：{"error_code":10000,"result":false}
-		System.out.println(reStr);
 		JSONObject js=JSONObject.fromObject(reStr);
 		if(StringUtils.isNotBlank(js.optString("error_code"))){
 			throw new RuntimeException("trade err!:" + js.optString("error_code"));
@@ -87,6 +93,111 @@ public class OkcoinTrader implements Tradable {
 			throw new RuntimeException(e.getMessage(), e);
 		} 
 	}
+	
+	/* (non-Javadoc)
+	 * @see summ.btc.btclock.Tradable#get(java.lang.Long)
+	 */
+	@Override
+	public TradeOrder get(Long orderId) {
+		try {
+			String reStr=stockPost.order_info("btc_cny", ""+orderId);
+			return parseOrders(reStr);
+		}catch  (Exception e) {
+			throw new RuntimeException(e.getMessage(), e);
+		} 
+	}
+	/*
+{
+    "result": true,
+    "orders": [
+        {
+            "amount": 0.1,
+            "avg_price": 0,
+            "create_date": 1418008467000,
+            "deal_amount": 0,
+            "order_id": 10000591,
+            "orders_id": 10000591,
+            "price": 500,
+            "status": 0,
+            "symbol": "btc_cny",
+            "type": "sell"
+        },
+        {
+            "amount": 0.2,
+            "avg_price": 0,
+            "create_date": 1417417957000,
+            "deal_amount": 0,
+            "order_id": 10000724,
+            "orders_id": 10000724,
+            "price": 0.1,
+            "status": 0,
+            "symbol": "btc_cny",
+            "type": "buy"
+        }
+    ]
+}
+	 */
+	private TradeOrder parseOrders(String reStr){
+		TradeOrder to=new TradeOrder();
+		JSONObject js=JSONObject.fromObject(reStr);
+		if(StringUtils.isNotBlank(js.optString("error_code"))){
+			throw new RuntimeException("trade err!:" + js.optString("error_code"));
+		}
+		JSONArray odrJa=js.optJSONArray("orders");
+		if(odrJa==null|| odrJa.size()<=0){
+			return null;
+		}
+		if(odrJa.size()>1){
+			System.out.println("warn:size>1 get by OrdergId res:"+reStr);
+		}
+		JSONObject orderJs=odrJa.optJSONObject(0); 
+		to.setId(orderJs.optLong("order_id",0l));
+		to.setCode(orderJs.optString("order_id"));
+		to.setSubmitPrice(orderJs.optString("price"));//委托价
+		to.setOrigAmount(orderJs.optString("amount"));//委托量
+		//
+		to.setStrikePrice(orderJs.optString("avg_price"));//平均成交价
+		String dealAm=orderJs.optString("deal_amount"); //已成交量
+		if(StringUtils.isNotBlank(dealAm) && StringUtils.isNotBlank(to.getOrigAmount())){
+			BigDecimal origAmBd=new BigDecimal(to.getOrigAmount());
+			BigDecimal dealAmBd=new BigDecimal(dealAm);
+			BigDecimal nowAmBd=origAmBd.subtract(dealAmBd);
+			nowAmBd.setScale(2, BigDecimal.ROUND_HALF_UP);
+			to.setNowAmount(nowAmBd.toPlainString());
+		}
+//		to.setNowAmount(orderJs.optString("deal_amount")); //未成交量，okcoin只给已成交量。
+	////TODO 需要根据情况判断设置
+		to.setCurrencyType(CurrencyTypeEnum.CNY); 
+		to.setTargetCurrencyType(CurrencyTypeEnum.BTC); 
+		// 创建订单的时间戳
+		long cTsL=orderJs.optLong("create_date",Long.MIN_VALUE);
+		to.setCreatedTs(new Date(cTsL));
+		//
+		String typeStr= orderJs.optString("type");
+		if("buy".equals(typeStr) || "buy_market".equals(typeStr) ){
+			to.setTradeType(TradeTypeEnum.BID);
+		}else if("sell".equals(typeStr) || "sell_market".equals(typeStr) ){
+			to.setTradeType(TradeTypeEnum.ASK);
+		}else{
+			to.setTradeType(TradeTypeEnum.UNKNOWN);
+		}
+		//
+		String stat=orderJs.optString("status");
+		if("0".equals(stat) ){
+			to.setStatus(TradeOrderStatusEnum.OPEN);
+		}else if("2".equals(stat) ){
+			to.setStatus(TradeOrderStatusEnum.CLOSED);
+		}else if("4".equals(stat) ){
+			to.setStatus(TradeOrderStatusEnum.CANCELLING);
+		}else if("-1".equals(stat) ){
+			to.setStatus(TradeOrderStatusEnum.CANCELLED);
+		}else if("1".equals(stat) ){
+			to.setStatus(TradeOrderStatusEnum.PENDING);
+		}else{
+			to.setStatus(TradeOrderStatusEnum.UNKNOWN);
+		}
+		return to;
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -107,6 +218,8 @@ public class OkcoinTrader implements Tradable {
 			throw new RuntimeException(e.getMessage(), e);
 		} 
 	}
+	
+	
 	
 	/**
 	 * @return the apiKey
@@ -144,6 +257,8 @@ public class OkcoinTrader implements Tradable {
 	public void setUrlPrex(String urlPrex) {
 		this.urlPrex = urlPrex;
 	}
+
+
 	
 //	/**
 //	 * @return the stockPost

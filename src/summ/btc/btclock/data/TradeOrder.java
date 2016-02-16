@@ -20,6 +20,38 @@ public class TradeOrder {
     private String               origAmount;       //成交前所有量
     private TradeOrderStatusEnum status;           //状态
     private Date 				 createdTs;           //创建时间
+    
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		boolean b = obj instanceof TradeOrder;
+		if (b) {
+			TradeOrder u = (TradeOrder) obj;
+			if(this.id==null && u.id==null){
+				return true;
+			}else if(this.id==null && u.id!=null){
+				return false;
+			}
+			if (this.id.equals(u.id)) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		if(this.id==null)return 0;
+		return this.id.hashCode();
+	}
 
     /**
      * @return the id
@@ -186,5 +218,10 @@ public class TradeOrder {
 	public void setCreatedTs(Date createdTs) {
 		this.createdTs = createdTs;
 	}
+
+
+
+
+
 
 }

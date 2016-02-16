@@ -16,6 +16,8 @@ public interface Tradable {
 	
 	public TradeOrder sell(String price, String amount);
 	
+	public TradeOrder get(Long orderId);
+	
 	public void cancel(Long orderId);
 	
 //	public void cancel(String orderCode);

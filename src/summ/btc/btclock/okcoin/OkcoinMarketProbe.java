@@ -221,6 +221,7 @@ public class OkcoinMarketProbe implements MarketProbable,WebSocketService{
 				//
 				if("2".equals(stat)||"-1".equals(stat) ){
 					kanban.closedOrders.offer(to);
+					kanban.closedOrderMap.put(to.getId(), to);
 					kanban.openningCache.remove(to.getId());
 				}else{
 					kanban.openningCache.put(to.getId(), to);

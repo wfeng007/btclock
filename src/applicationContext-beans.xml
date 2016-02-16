@@ -35,4 +35,11 @@
 		<property name="kanban" ref="kanban"/>
 	</bean>
 	
+	
+	<!-- SimpleClockDecider -->
+	<bean id="simpleClockDecider" class="summ.btc.btclock.SimpleClockDecider">
+		<property name="kanban" ref="kanban"/>
+		<property name="trader" ref="okcoinTrader"/>
+	</bean>
+	
 </beans>

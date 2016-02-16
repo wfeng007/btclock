@@ -372,17 +372,25 @@ public class BtccTrader implements Tradable {
             return reTo;
         }
     }
-
-    public TradeOrder getOrder(TradeOrder order) {
-        TradeData td = new TradeData();
+    
+	/* (non-Javadoc)
+	 * @see summ.btc.btclock.Tradable#get(java.lang.Long)
+	 */
+	@Override
+	public TradeOrder get(Long orderId) {
+		TradeData td = new TradeData();
         td.req.id = 2;
         td.req.method = "getOrder";
-        td.req.addParam(order.getId());
+        td.req.addParam(orderId);
         this.trade(td);
         if (td.resp.errorJson != null) {
             throw new RuntimeException("trade err!:" + td.resp.errorJson);
         }
         return parseRsToOrder(td.resp.result.optJSONObject("order"));
+	}
+
+    public TradeOrder getOrder(TradeOrder order) {
+    	return get(order.getId());
     }
 
     //
@@ -457,6 +465,8 @@ public class BtccTrader implements Tradable {
         //        System.out.println(td.resp.resultStr);
 
     }
+
+
 
 
 }
