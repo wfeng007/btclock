@@ -4,11 +4,20 @@
 package summ.btc.btclock;
 
 import java.math.BigDecimal;
+import java.util.concurrent.Future;
 
+import javax.swing.JOptionPane;
+
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import summ.btc.btclock.Kanban.Depth;
 import summ.btc.btclock.btcc.BtccTrader;
 import summ.btc.btclock.btcc.BtccTrader.TradeOption;
 import summ.btc.btclock.data.TradeOrder;
 import summ.btc.btclock.data.TradeOrderStatusEnum;
+import summ.btc.btclock.okcoin.OkcoinMarketProbe;
+import summ.btc.btclock.okcoin.OkcoinTrader;
 
 /**
  * 决策执行者，集中使用算法通知Trader进行买卖。
@@ -19,33 +28,91 @@ public class SimpleClockDecider {
 
     private Thread            simpleClockTradeWorker = null;
     private SimpleClockRunner simpleClockRunner      = null;
+    
+    private Tradable  trader;
+    private Kanban kanban;
 
     static final String       AMOUNT                 = "0.0100";
 
-    SimpleClockDecider(BtccTrader btccTrader) {
-        simpleClockRunner = new SimpleClockRunner(btccTrader, 20);
-        simpleClockTradeWorker = new Thread(simpleClockRunner);
+    SimpleClockDecider() {
     }
-
+    
     void startup() {
-        this.simpleClockTradeWorker.start();
+    	
+    	if(this.simpleClockRunner==null||this.simpleClockRunner.isFinished){
+    		this.simpleClockRunner = new SimpleClockRunner(20);
+	    	this.simpleClockTradeWorker = new Thread(simpleClockRunner);
+	    	this.simpleClockRunner.setFinished(false);
+	        this.simpleClockTradeWorker.start();
+    	}
     }
 
     void stop() {
         this.simpleClockRunner.setFinished(true);
     }
+    
+    /*
+     * 下买单 ，买一价。不等待成交。
+     */
+    public TradeOrder offerBuyOrder(String amount) {
+    		Depth d = kanban.nowDepth;
+			if (d.bidList.size() <= 0) {
+				throw new RuntimeException("无参考价格用于下单。");
+			}
+			TradeOrder to = d.bidList.get(0);
+			System.out.println("买入价：" + to.getSubmitPrice() + " 买入量："
+					+ amount);
+    		return trader.buy(to.getSubmitPrice(), amount);
+    }
+    
+    /*
+     * 下卖单，卖一价。不等待成交。
+     */
+    public TradeOrder offerSellOrder(String amount) {
+			Depth d = kanban.nowDepth;
+			if (d.askList.size() <= 0) {
+				throw new RuntimeException("无参考价格用于下单。");
+			}
+			TradeOrder to = d.askList.get(0);
+			System.out.println("卖出价：" + to.getSubmitPrice() + " 卖出量："
+					+ amount);
+			return trader.sell(to.getSubmitPrice(), amount);
+	}
+    
+    public TradeOrder waitingTrade(Long id){
+    		if(id==null){
+    			throw new NullPointerException("id not be Null!");
+    		}
+    		TradeOrder to=new TradeOrder();
+    		to.setId(id);
+    		outFor:for(;;){
+    			for (int i = 0; i < 10; i++) {
+    				if(kanban.closedOrderMap.containsKey(id)){
+    					return kanban.closedOrderMap.get(id);
+    				}else{
+    					try {
+							Thread.sleep(500);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+    				}
+				}
+    			//通过远端访问
+    		}
+    }
+    
+    
 
-    static final class SimpleClockRunner implements Runnable {
+    final class SimpleClockRunner implements Runnable {
 
-        private BtccTrader  tdr        = null;
+ 
 
-        private boolean isFinished = false;
+        private boolean isFinished = true;
 
         private int     count      = 0;
 
-        public SimpleClockRunner(BtccTrader tdr, int count) {
+        public SimpleClockRunner( int count) {
             super();
-            this.tdr = tdr;
             this.count = count;
         }
 
@@ -85,56 +152,42 @@ public class SimpleClockDecider {
         @SuppressWarnings("unused")
         private void biz() {
             //1下买入市价单1单，需要注意处理长时间部分成交。
-            TradeOrder toB = tdr.buy(null, AMOUNT, new TradeOption());
+            TradeOrder toB = offerBuyOrder(AMOUNT);
+            toB=waitingTrade(toB.getId());
             //3针对成交价计算卖出价
             String strikePriceStr = null;
             strikePriceStr = toB.getStrikePrice();//成交价 而不是报价 市价单报价时为0.00
             BigDecimal strikePrice = new BigDecimal(strikePriceStr);
 
-            BigDecimal newPrice = strikePrice.add(new BigDecimal("0.76"));
+            BigDecimal newPrice = strikePrice.add(new BigDecimal("0.05"));
             newPrice.setScale(2, BigDecimal.ROUND_HALF_UP);
             String newPriceStr = newPrice.toString();
             System.out.println("建仓价：" + strikePriceStr + "  准备平仓价：" + newPriceStr);
 
             //4下卖出价
-            TradeOption sellOpt = new TradeOption();
-            sellOpt.setWaitingClose(false);
-            TradeOrder toS = tdr.sell(newPriceStr, AMOUNT, sellOpt);
+            TradeOrder toS = trader.sell(newPriceStr, AMOUNT);
             //检测是否在超时周期内交易成功
             String orderId2 = toS.getCode();
-            toS = tdr.waitingClose(orderId2, 60, 5000);
+            toS=waitingTrade(toS.getId());
 
             //完成处理
-            if (TradeOrderStatusEnum.CLOSED.equals(toS.getStatus())) {
+/*            if (TradeOrderStatusEnum.CLOSED.equals(toS.getStatus())) {
                 System.out.println("一局交易成功！");
                 System.out.println(toS);
             } else {//5超时未出单取消订单并直接市价出单
                 System.out.println("一局交易超时未出单，取消订单并直接市价出单！");
 
                 //超时，取消之前订单
-                tdr.cancel(Long.valueOf(orderId2));
+                trader.cancel(Long.valueOf(orderId2));
 
                 //超时，市价单平仓
                 TradeOption sell2Opt = new TradeOption();
                 sell2Opt.setWaitingClose(false);
-                tdr.sell(null, AMOUNT, sell2Opt);
+//                trader.sell(null, AMOUNT, sell2Opt);
 
-            }
+            }*/
         }
 
-        /**
-         * @return the tdr
-         */
-        public BtccTrader getTdr() {
-            return tdr;
-        }
-
-        /**
-         * @param tdr the tdr to set
-         */
-        public void setTdr(BtccTrader tdr) {
-            this.tdr = tdr;
-        }
 
         /**
          * @param isFinished the isFinished to set
@@ -152,9 +205,43 @@ public class SimpleClockDecider {
         return simpleClockTradeWorker;
     }
 
+    static AbstractApplicationContext appContext;
     public static void main(String[] args) {
-        BtccTrader tdr = new BtccTrader();
-        SimpleClockDecider scd = new SimpleClockDecider(tdr);
-        scd.startup();
+    	appContext=new ClassPathXmlApplicationContext("applicationContext-beans.xml");
+    	SimpleClockDecider decider=(SimpleClockDecider)appContext.getBean("simpleClockDecider");
+    	try {
+			Thread.sleep(15* 1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+    	decider.startup();
     }
+
+	/**
+	 * @return the trader
+	 */
+	public Tradable getTrader() {
+		return trader;
+	}
+
+	/**
+	 * @param trader the trader to set
+	 */
+	public void setTrader(Tradable trader) {
+		this.trader = trader;
+	}
+
+	/**
+	 * @return the kanban
+	 */
+	public Kanban getKanban() {
+		return kanban;
+	}
+
+	/**
+	 * @param kanban the kanban to set
+	 */
+	public void setKanban(Kanban kanban) {
+		this.kanban = kanban;
+	}
 }
