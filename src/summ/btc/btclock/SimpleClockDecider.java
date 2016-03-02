@@ -320,6 +320,14 @@ public class SimpleClockDecider {
                     Innings inni=biz();
                     matchTotaProfit=matchTotaProfit.add(inni.profit);
                     System.out.println("now Total profit:"+matchTotaProfit.toPlainString());
+                    if(inni.profit.compareTo(new BigDecimal(0))<0){//没有盈利 则考虑退避
+                    	System.out.print("逃脱止损后退避20s");
+                    	for (int i = 0; i < 20; i++) {
+                    		Thread.sleep(1000);
+                    		System.out.print(".");
+						}
+                    	System.out.println("退避结束");
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                     throw new RuntimeException("SimpleClockRunner Err!:" + e.getMessage(), e);
@@ -358,20 +366,51 @@ public class SimpleClockDecider {
 	        	}
         	}
             
-            //3针对成交价计算卖出价
+            //2针对成交价计算卖出价
             String strikePriceStr = null;
             strikePriceStr = toB.getStrikePrice();//成交价 而不是报价 市价单报价时为0.00
             BigDecimal strikePrice = new BigDecimal(strikePriceStr);
-
             BigDecimal newPrice = strikePrice.add(new BigDecimal("0.05"));
             newPrice.setScale(2, BigDecimal.ROUND_HALF_UP);
-            String newPriceStr = newPrice.toString();
-            System.out.println("建仓价：" + strikePriceStr + "  准备平仓价：" + newPriceStr);
+            String newPriceStr = newPrice.toPlainString();
+//            System.out.println("价格计算---> 建仓价：" + strikePriceStr + "  盈利平仓价：" + newPriceStr);
+            //...
+            BigDecimal escPrice=strikePrice.subtract(new BigDecimal("0.40"));
+            escPrice.setScale(2, BigDecimal.ROUND_HALF_UP);
+            String escPriceStr = escPrice.toPlainString();
+            System.out.println("价格计算---> 建仓价：" + strikePriceStr + "  盈利平仓价：" + newPriceStr+  "  逃跑平仓价：" + escPriceStr);
+            //
+            //3 检测当前价格 直到为盈利或逃跑位
+            //
+            String exitPriceStr=null;
+            for(;;){
+            	Depth d = kanban.nowDepth;
+            	String sell1=d.askList.get(0).getSubmitPrice();
+            	String buy1=d.bidList.get(0).getSubmitPrice();
+            	if(newPrice.compareTo(new BigDecimal(buy1))<0){//盈利平仓价 < buy1 时
+            		exitPriceStr=newPrice.toPlainString();
+            		System.out.println("使用盈利平仓价：" + exitPriceStr);
+            	}else if(escPrice.compareTo(new BigDecimal(buy1))>0)  {
+            		exitPriceStr=escPrice.toPlainString();
+            		System.out.println("使用逃跑平仓价：" + exitPriceStr);
+            	}
+            	if(exitPriceStr!=null){
+            		break;
+            	}
+            	try {
+					Thread.sleep(100);//
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+            }
+            //
+            //
+            //
 
             //4下卖出价
             TradeOrder toS = null;
             //检测是否在超时周期内交易成功
-            TradeOrderWaiter tow=sellWaiter(newPriceStr,AMOUNT);
+            TradeOrderWaiter tow=sellWaiter(exitPriceStr,AMOUNT);
             for(;;){
 	            toS=tow.await(5000);//如果5000中无法交易成功立即重新下卖单 并使用sell1价格
 	            if(toS==null || !TradeOrderStatusEnum.CLOSED.equals(toS.getStatus())){
@@ -380,9 +419,11 @@ public class SimpleClockDecider {
 	            	inni.exit=toS;
 	        		break;
 	            }
-	            System.out.println("市价单卖");
+	            System.out.println("没有及时成交，市价单卖。");
 	            tow=sellWaiter(null,AMOUNT);
             }
+            
+            
             
             //完成处理
             inni.parseProfit();
