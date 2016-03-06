@@ -99,8 +99,9 @@ public class OkcoinMarketProbe implements MarketProbable,WebSocketService{
 		for (int i = 0; i < outerJa.size(); i++) {
 			JSONObject outerJs=outerJa.optJSONObject(i);
 			String channel=outerJs.optString("channel");
+			//
 			if(StringUtils.isBlank(channel)){
-				System.out.println(outerJs.toString());
+				System.out.println("非注册通道："+outerJs.toString());
 				continue;
 			}
 			
@@ -109,6 +110,10 @@ public class OkcoinMarketProbe implements MarketProbable,WebSocketService{
 			}else if("ok_btccny_trades_v1".equals(channel)){//整体实时交易信息
 				
 				JSONArray tradesJa=outerJs.optJSONArray("data");
+				if(tradesJa==null){
+					System.out.println(msg);
+					continue;
+				}
 				for (int j = 0; j <  tradesJa.size(); j++) {
 					JSONArray tJa=tradesJa.optJSONArray(j);
 					TradeRecord tr=new TradeRecord();
@@ -131,9 +136,14 @@ public class OkcoinMarketProbe implements MarketProbable,WebSocketService{
 				}
 				
 			}else if("ok_btccny_depth".equals(channel)){//市场深度20条
+//				System.out.println(msg);
 				//1
 				Depth newDp=new Depth();
 				JSONObject depthJs=outerJs.optJSONObject("data");
+				if(depthJs==null){
+					System.out.println(msg);
+					continue;
+				}
 				JSONArray bidsJa=depthJs.optJSONArray("bids");//买
 				for (int j = 0; j < bidsJa.size(); j++) {
 					JSONArray bJa=bidsJa.optJSONArray(j);
