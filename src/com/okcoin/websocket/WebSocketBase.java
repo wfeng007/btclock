@@ -1,16 +1,5 @@
 package com.okcoin.websocket;
 
-import java.net.URI;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-
-import org.apache.log4j.Logger;
-
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -24,12 +13,24 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.handler.ssl.SslContext;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import org.apache.log4j.Logger;
 
 public abstract class  WebSocketBase {
 
@@ -45,6 +46,8 @@ public abstract class  WebSocketBase {
 	private boolean  isAlive = false;
 	private int siteFlag = 0;
 	private Set<String> subscribChannel = new HashSet<String>();
+	//用以重建用户私人相关的链接
+	private List<String> cachedPrivChannel = new ArrayList<String>();
 	public WebSocketBase(String url,WebSocketService serivce){
 		this.url = url;
 		this.service = serivce;
@@ -248,6 +251,8 @@ public abstract class  WebSocketBase {
 				.append("'},'binary':'true'}");
 		log.info(tradeStr.toString());
 		this.sendMessage(tradeStr.toString());
+		//TODO wf：增加realTrades重连机制
+		cachedPrivChannel.add(tradeStr.toString());
 	}
 	/**
 	 * 现货交易下单
@@ -301,12 +306,15 @@ public abstract class  WebSocketBase {
 			group = new NioEventLoopGroup(1);
 			bootstrap = new Bootstrap();
 			final SslContext sslCtx = SslContext.newClientContext();
+			//wf:可以获取wsocket 行为监听器
 			final WebSocketClientHandler handler =
                     new WebSocketClientHandler( WebSocketClientHandshakerFactory.newHandshaker(uri,
 								WebSocketVersion.V13, null, false,
 								new DefaultHttpHeaders(), Integer.MAX_VALUE),service,moniter);
+			
+			//启动底层客户端（netty）配置并注册状态监听器
 			bootstrap.group(group).option(ChannelOption.TCP_NODELAY, true)
-						.channel(NioSocketChannel.class)
+						.channel(NioSocketChannel.class) //netty
 						.handler(new ChannelInitializer<SocketChannel>() {
 							protected void initChannel(SocketChannel ch) {
 								ChannelPipeline p = ch.pipeline();
@@ -314,7 +322,7 @@ public abstract class  WebSocketBase {
 									p.addLast(sslCtx.newHandler(ch.alloc(), uri.getHost(),uri.getPort()));
 								}
 								p.addLast(new HttpClientCodec(),
-										new HttpObjectAggregator(8192), handler);
+										new HttpObjectAggregator(8192), handler);//监听器
 							}
 						});
 	
@@ -358,6 +366,12 @@ public abstract class  WebSocketBase {
                 	this.addChannel(channel);
                 }
                 
+                //reconn 个人相关（非公开市场信息）信息通道
+                for (String privCH : cachedPrivChannel) {
+                	log.info(privCH);
+            		this.sendMessage(privCH);
+				}
+                
 			}
 
 		} catch (Exception e) {
@@ -374,7 +388,7 @@ class MoniterTask extends TimerTask {
 	  
 	private Logger log = Logger.getLogger(WebSocketBase.class);
 	private long  startTime = System.currentTimeMillis();
-	private int checkTime = 5000;
+	private int checkTime = 5000; //5秒没有收到服务器消息就重连。
 	private WebSocketBase client = null;
 	public void updateTime(){
 		//log.info("startTime is update");

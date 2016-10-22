@@ -24,6 +24,9 @@ import summ.btc.btclock.data.TradeOrderStatusEnum;
 import summ.btc.btclock.data.TradeTypeEnum;
 
 /**
+ * 
+ * 交易使用rest技术方式实现。未用websocket方式。
+ * 
  * @author wfeng007
  * @date 2016-2-13 下午04:09:41
  */

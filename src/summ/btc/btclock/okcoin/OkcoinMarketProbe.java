@@ -68,8 +68,9 @@ public class OkcoinMarketProbe implements MarketProbable,WebSocketService{
 		//实时成交
 		client.addChannel("ok_btccny_trades_v1"); //
 		//
-		//个人现货交易订单变化
-		client.realTrades(apiKey, secretKey);
+		//个人现货交易订单变化 需要账户
+		client.realTrades(apiKey, secretKey); //FIXME 这个在断开后不会重连？
+//		client.addChannel("ok_cny_realtrades");
 	}
 	
 	static class WebSoketClient extends WebSocketBase{

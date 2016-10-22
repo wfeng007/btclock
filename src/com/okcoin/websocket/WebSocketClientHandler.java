@@ -41,23 +41,24 @@ public class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> 
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) {
+    public void channelActive(ChannelHandlerContext ctx) {//连接建立
         handshaker.handshake(ctx.channel());
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) {
+    public void channelInactive(ChannelHandlerContext ctx) { //连接断开
         System.out.println("WebSocket Client disconnected!");
+        //TODO 更新client状态
     }
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
         Channel ch = ctx.channel();
-        moniter.updateTime();
-        if (!handshaker.isHandshakeComplete()) {
+        moniter.updateTime(); //更新监控状态，如果长时间没有更新则监控其将会重连。
+        if (!handshaker.isHandshakeComplete()) { 
             handshaker.finishHandshake(ch, (FullHttpResponse) msg);
-            System.out.println("WebSocket Client connected!");
-            handshakeFuture.setSuccess();
+            System.out.println("WebSocket Client connected!"); //TODO 更新client状态,
+            handshakeFuture.setSuccess();//设置握手成功。
             return;
         }
 

@@ -74,6 +74,11 @@ public class MarketTrader {
 			return trader.sell(to.getSubmitPrice(), amount);
 	}
 
+    /**
+     * 用于等待及取消的句柄
+     * @author wfeng007
+     * @date 2016-3-7 下午11:11:43
+     */
 	public static class TradeOrderWaiter {
 
 		private TradeOrder waitingTradeOrder;
@@ -151,7 +156,7 @@ public class MarketTrader {
 		}
 
 		/**
-		 * 等待订单成交或取消，并有超时。 超时返回现有订单情况
+		 * 等待订单成交，并有超时。 超时返回现有订单情况。
 		 * 
 		 * @return
 		 */

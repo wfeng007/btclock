@@ -4,6 +4,7 @@
 package summ.btc.btclock;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -11,6 +12,8 @@ import java.awt.GridLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
@@ -42,6 +45,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import com.sun.org.apache.xpath.internal.FoundIndex;
+
 import summ.btc.btclock.Kanban.Depth;
 import summ.btc.btclock.data.TickRecord;
 import summ.btc.btclock.data.TradeOrder;
@@ -50,6 +55,8 @@ import summ.btc.btclock.okcoin.OkcoinMarketProbe;
 import summ.btc.btclock.okcoin.OkcoinTrader;
 
 /**
+ * 界面版方式交易器
+ * 人工交易器
  * @author wangfeng
  */
 public class SimpleTradePane {
@@ -70,6 +77,7 @@ public class SimpleTradePane {
     //    static JPanel middlePanel;
 
     /**
+     * 功能：
      * 键盘操作买卖。
      *
      * @author wangfeng
@@ -77,7 +85,6 @@ public class SimpleTradePane {
     static class TradeKeyListener implements KeyListener {
         @Override
         public void keyPressed(KeyEvent e) {
-            //            System.out.println("---" + e);
         }
 
         @Override
@@ -101,7 +108,7 @@ public class SimpleTradePane {
                     System.out.println("键盘操作：卖出");
                     offerSellOrder();
                     break;
-                case KeyEvent.VK_ESCAPE://撤单
+                case KeyEvent.VK_ESCAPE://撤单 
                     System.out.println("键盘操作：撤单");
                     cancelAllOpenningOrder();
                     break;
@@ -113,6 +120,33 @@ public class SimpleTradePane {
         @Override
         public void keyTyped(KeyEvent e) {
             //            System.out.println("---" + e);
+        }
+    }
+    
+    /**
+     * 功能：
+     * 焦点变换到交易面板
+     *
+     * @author wangfeng
+     */
+    static class ToFoucsTradePaeKeyListener implements KeyListener {
+        @Override
+        public void keyPressed(KeyEvent e) {
+        }
+        @Override
+        public void keyReleased(KeyEvent e) {
+            //            System.out.println("---" + e);
+            int keyCode = e.getKeyCode();
+            switch (keyCode) {//判断键盘值
+                case KeyEvent.VK_ESCAPE://买入 buy 1
+                    topPanel.requestFocus();
+                    break;
+                default:
+                    break;
+            }
+        }
+        @Override
+        public void keyTyped(KeyEvent e) {
         }
     }
     
@@ -213,14 +247,10 @@ public class SimpleTradePane {
 	}
 
 
-	
-
-
-
     
     static void cancelAllOpenningOrder() {
     	try{
-    		Set<Long> ks=kanban.openningCache.keySet();
+    		Set<Long> ks=kanban.openningCache.keySet(); //这里使用的是本地缓存中的数据，而不是远程服务器上的。
     		for (Long id : ks) {
     			if(id!=null)trader.cancel(id);
 			}
@@ -338,7 +368,7 @@ public class SimpleTradePane {
                             bid1.getSubmitPrice(), bid1.getOrigAmount());
                 }
 
-                //刷新交易数据
+                //刷新 实时交易数据
                 while (lftModel.getRowCount() > 0) {
                     lftModel.removeRow(lftModel.getRowCount() - 1);
                 }
@@ -356,7 +386,7 @@ public class SimpleTradePane {
                     rgtModel.removeRow(rgtModel.getRowCount() - 1);
                 }
                 List<TradeOrder> openningLs = new ArrayList<TradeOrder>();
-                openningLs.addAll(kanban.openningCache.values());
+                openningLs.addAll(kanban.openningCache.values());//
                 for (TradeOrder to : openningLs) {
 //                	System.out.println(FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss").format(to.getCreatedTs()));
                   String[] rowData = { ""+to.getId(), ""+to.getTradeType(),
@@ -366,15 +396,13 @@ public class SimpleTradePane {
                     rgtModel.addRow(rowData);
                 }
                 
-                
-
                 //
                 //解析订单结果
                 //{ "id", "type", "price", "avg_price", "amount", "amount_original", "date", "status" }
                 while (tableModel.getRowCount() > 0) {
                     tableModel.removeRow(tableModel.getRowCount() - 1);
                 }
-                for (TradeOrder to : kanban.closedOrders) {
+                for (TradeOrder to : kanban.closedOrders) {  //FIXME 重连后，kanban.closedOrders,kanban.openningCache 都没有数据更新了。 貌似是probe在重连时ok_cny_realtrades不连接的[{"channel":"ok_cny_realtrades","success":"true"}]
 //                	System.out.println(FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss").format(to.getCreatedTs()));
                     String[] rowData = { ""+to.getId(), ""+to.getTradeType(),
                             to.getSubmitPrice(),to.getStrikePrice(), to.getNowAmount(),
@@ -402,10 +430,14 @@ public class SimpleTradePane {
     static void initTopPane() {
         topPanel = new JPanel();
 
+        //交易按钮面板
         bidAskPanel = new BidAskPanel();
-        //内容
-        JButton buyButton = new JButton("买入");
-        JButton sellButton = new JButton("卖出");
+        //交易按钮
+        JButton buyButton = new JButton("买入");//bid
+        JButton sellButton = new JButton("卖出");//ask
+        //不让按钮取得焦点
+        buyButton.setFocusable(false);
+        sellButton.setFocusable(false);
         //        buyButton.setEnabled(false);
         //按钮功能：
         buyButton.addActionListener(new ActionListener() {//市价买入行为
@@ -438,9 +470,12 @@ public class SimpleTradePane {
         topPanel.add(Box.createVerticalStrut(10));//10px高空白
         topPanel.add(bidAskPanel);
         topPanel.add(Box.createVerticalStrut(10));//10px高空白
+        
+        //交易btc量输入框
         amountTf=new JTextField();
         amountTf.setPreferredSize(new Dimension(100, 30));
         amountTf.setText(tradeAmount);
+        amountTf.addKeyListener(new ToFoucsTradePaeKeyListener());
         topPanel.add(amountTf);
         //        topPanel.add
         //        topPanel.setBorder(BorderFactory.createLineBorder(Color.green, 3));
@@ -453,7 +488,27 @@ public class SimpleTradePane {
         //        topPanel.enableEvents(AWTEvent.MOUSE_EVENT_MASK);
         //        topPanel.enableEvents(AWTEvent.MOUSE_MOTION_EVENT_MASK);
         //        topPanel.enableEvents(AWTEvent.KEY_EVENT_MASK);
+        
+        
+        topPanel.addFocusListener(new FocusListener() { //交易面板绿色时表示可通过按钮进行操作（有焦点）
+			@Override
+			public void focusLost(FocusEvent e) {
+				Component c=e.getComponent();
+				c.setBackground(Color.DARK_GRAY);
+			}
+			@Override
+			public void focusGained(FocusEvent e) {
+				Component c=e.getComponent();
+				
+				c.setBackground(Color.green);
+			}
+		});
+        
+        
         topPanel.addKeyListener(new TradeKeyListener());//
+        
+        
+ 
     }
 
     static void initMiddlePane() {
