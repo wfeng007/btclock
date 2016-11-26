@@ -9,12 +9,12 @@ package summ.btc.btclock.data;
 public enum TradeOrderStatusEnum {
 
     OPEN(1, "open", "新建"),
-    PENDING(5, "pending", "等待"), //btc
-
+    PENDING(5, "pending", "等待"), //btc //交易一部分则是这个状态
+ 
     //okcoin -1已撤销,0等待成交,1部分成交,2完全成交,4撤单处理中
     
     CANCELLING(6,"cancelling","撤单中"),
-    CLOSED(7, "closed", "结束"),//成交结束
+    CLOSED(7, "closed", "结束"),//成交结束 //一般指成功交易结束  根据deal_amount判断是否完全成交
     CANCELLED(8,"cancelled","撤单结束"),
     UNKNOWN(99, "unknown", "未知"),
     ;

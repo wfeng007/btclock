@@ -244,6 +244,12 @@ public class OkcoinMarketProbe implements MarketProbable,WebSocketService{
 			}
 		}
 	}
+	
+	
+//	public void loadMyOrders(){
+//		
+//		return ;
+//	}
 
 	/**
 	 * @return the apiKey

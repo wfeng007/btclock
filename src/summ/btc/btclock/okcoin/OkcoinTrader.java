@@ -6,6 +6,7 @@ package summ.btc.btclock.okcoin;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -140,6 +141,11 @@ public class OkcoinTrader implements Tradable {
     ]
 }
 	 */
+	
+	/** 
+	 * TODO 需要拆出一个获取list的版本。
+	 * 解析json
+	 */
 	private TradeOrder parseOrders(String reStr){
 		TradeOrder to=new TradeOrder();
 		JSONObject js=JSONObject.fromObject(reStr);
@@ -147,7 +153,7 @@ public class OkcoinTrader implements Tradable {
 			throw new RuntimeException("trade err!:" + js.optString("error_code"));
 		}
 		JSONArray odrJa=js.optJSONArray("orders");
-		if(odrJa==null|| odrJa.size()<=0){
+		if(odrJa==null|| odrJa.size()<=0){ //解析只取一个。
 			return null;
 		}
 		if(odrJa.size()>1){
@@ -175,7 +181,7 @@ public class OkcoinTrader implements Tradable {
 		// 创建订单的时间戳
 		long cTsL=orderJs.optLong("create_date",Long.MIN_VALUE);
 		to.setCreatedTs(new Date(cTsL));
-		//
+		//买卖类型
 		String typeStr= orderJs.optString("type");
 		if("buy".equals(typeStr) || "buy_market".equals(typeStr) ){
 			to.setTradeType(TradeTypeEnum.BID);
@@ -184,18 +190,18 @@ public class OkcoinTrader implements Tradable {
 		}else{
 			to.setTradeType(TradeTypeEnum.UNKNOWN);
 		}
-		//
+		//交易订单状态
 		String stat=orderJs.optString("status");
 		if("0".equals(stat) ){
-			to.setStatus(TradeOrderStatusEnum.OPEN);
+			to.setStatus(TradeOrderStatusEnum.OPEN); 
 		}else if("2".equals(stat) ){
-			to.setStatus(TradeOrderStatusEnum.CLOSED);
+			to.setStatus(TradeOrderStatusEnum.CLOSED); //一般指成功交易结束  根据deal_amount判断是否完全成交
 		}else if("4".equals(stat) ){
 			to.setStatus(TradeOrderStatusEnum.CANCELLING);
 		}else if("-1".equals(stat) ){
 			to.setStatus(TradeOrderStatusEnum.CANCELLED);
 		}else if("1".equals(stat) ){
-			to.setStatus(TradeOrderStatusEnum.PENDING);
+			to.setStatus(TradeOrderStatusEnum.PENDING); //交易一部分则是这个状态
 		}else{
 			to.setStatus(TradeOrderStatusEnum.UNKNOWN);
 		}
@@ -220,6 +226,49 @@ public class OkcoinTrader implements Tradable {
 		} catch (Exception e) {
 			throw new RuntimeException(e.getMessage(), e);
 		} 
+	}
+	
+//
+//	{
+//	    "current_page": 1,
+//	    "orders": [{
+//	        "amount": 0.096,
+//	        "avg_price": 4505.6104,
+//	        "create_date": 1477158256000,
+//	        "deal_amount": 0.096,
+//	        "order_id": 6071176223,
+//	        "price": 4505.61,
+//	        "status": 2,
+//	        "symbol": "btc_cny",
+//	        "type": "buy"
+//	    },
+//	    {
+//	        "amount": 0.096,
+//	        "avg_price": 4505.4802,
+//	        "create_date": 1477158243000,
+//	        "deal_amount": 0.096,
+//	        "order_id": 6071174276,
+//	        "price": 4505.48,
+//	        "status": 2,
+//	        "symbol": "btc_cny",
+//	        "type": "sell"
+//	    }],
+//	    "page_length": 20,
+//	    "result": true,
+//	    "total": 21
+//	}
+	/**
+	 * 私人订单
+	 * @param type
+	 * @return
+	 */
+	public List<TradeOrder> listMyOrders(String type){
+		try {
+			String reStr=stockPost.order_history("btc_usd", type, "1", "30");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 	

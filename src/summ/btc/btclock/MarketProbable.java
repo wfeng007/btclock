@@ -12,4 +12,6 @@ import com.sun.org.apache.xml.internal.security.Init;
 public interface MarketProbable {
 		void init();
 		void setKanban(Kanban kanban);
+		
+//		void loadMyOrders();
 }

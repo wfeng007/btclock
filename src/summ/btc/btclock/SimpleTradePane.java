@@ -357,64 +357,75 @@ public class SimpleTradePane {
         @Override
         public void run() {
             for (;;) {
-                //刷新 买一 卖一
-            	Depth nowDe = kanban.nowDepth;
-                if (nowDe != null && nowDe.askList.size()>0 && nowDe.bidList.size()>0) {
-                    // System.out.println(nowGo);
-                	
-                	TradeOrder ask1= nowDe.askList.get(0);
-                	TradeOrder bid1= nowDe.bidList.get(0);
-                    SimpleTradePane.bidAskPanel.setBidAsk(ask1.getSubmitPrice(), ask1.getOrigAmount(),
-                            bid1.getSubmitPrice(), bid1.getOrigAmount());
-                }
-
-                //刷新 实时交易数据
-                while (lftModel.getRowCount() > 0) {
-                    lftModel.removeRow(lftModel.getRowCount() - 1);
-                }
-//                "trade_id", "price", "amount", "type", "date"
-                for (TradeRecord trade : kanban.tradeRecords) {
-                    String[] rowData = { ""+trade.getId(), trade.getStrikePrice(),
-                    		trade.getAmount(), ""+trade.getTradeType(),getTsStr(trade.getTradeTs()) };
-                    lftModel.addRow(rowData);
-                }
-
-                //
-                // { "id", "type", "price", "amount", "amount_original", "date", "status" };
-                //刷新open中的订单数据
-                while (rgtModel.getRowCount() > 0) {
-                    rgtModel.removeRow(rgtModel.getRowCount() - 1);
-                }
-                List<TradeOrder> openningLs = new ArrayList<TradeOrder>();
-                openningLs.addAll(kanban.openningCache.values());//
-                for (TradeOrder to : openningLs) {
-//                	System.out.println(FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss").format(to.getCreatedTs()));
-                  String[] rowData = { ""+to.getId(), ""+to.getTradeType(),
-                  to.getSubmitPrice(), to.getNowAmount(),
-                  to.getOrigAmount(),getTsStr(to.getCreatedTs()),
-                  ""+to.getStatus() };
-                    rgtModel.addRow(rowData);
-                }
-                
-                //
-                //解析订单结果
-                //{ "id", "type", "price", "avg_price", "amount", "amount_original", "date", "status" }
-                while (tableModel.getRowCount() > 0) {
-                    tableModel.removeRow(tableModel.getRowCount() - 1);
-                }
-                for (TradeOrder to : kanban.closedOrders) {  //FIXME 重连后，kanban.closedOrders,kanban.openningCache 都没有数据更新了。 貌似是probe在重连时ok_cny_realtrades不连接的[{"channel":"ok_cny_realtrades","success":"true"}]
-//                	System.out.println(FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss").format(to.getCreatedTs()));
-                    String[] rowData = { ""+to.getId(), ""+to.getTradeType(),
-                            to.getSubmitPrice(),to.getStrikePrice(), to.getNowAmount(),
-                            to.getOrigAmount(),getTsStr(to.getCreatedTs()),
-                            ""+to.getStatus() };
-                    tableModel.addRow(rowData);
-                }
+            	try{
+	                //刷新 买一 卖一
+	            	Depth nowDe = kanban.nowDepth;
+	                if (nowDe != null && nowDe.askList.size()>0 && nowDe.bidList.size()>0) {
+	                    // System.out.println(nowGo);
+	                	
+	                	TradeOrder ask1= nowDe.askList.get(0);
+	                	TradeOrder bid1= nowDe.bidList.get(0);
+	                    SimpleTradePane.bidAskPanel.setBidAsk(ask1.getSubmitPrice(), ask1.getOrigAmount(),
+	                            bid1.getSubmitPrice(), bid1.getOrigAmount());
+	                }
+	
+	                //刷新 实时交易数据
+	//           // "trade_id", "price", "amount", "type", "date"
+	                while (lftModel.getRowCount() > 0) {
+	                    lftModel.removeRow(lftModel.getRowCount() - 1);
+	                }
+	                for (TradeRecord trade : kanban.tradeRecords) {
+	                    String[] rowData = { ""+trade.getId(), trade.getStrikePrice(),
+	                    		trade.getAmount(), ""+trade.getTradeType(),getTsStr(trade.getTradeTs()) };
+	                    lftModel.addRow(rowData);
+	                }
+//	                for (int i = 0; i < kanban.tradeRecords.size(); i++) {
+//	                	TradeRecord trade=kanban.tradeRecords.get(i);
+//	                	lftModel.setValueAt(trade.getId(), i, 0);
+//					}
+	                
+	
+	                //
+	                // { "id", "type", "price", "amount", "amount_original", "date", "status" };
+	                //刷新open中的订单数据
+	                while (rgtModel.getRowCount() > 0) {
+	                    rgtModel.removeRow(rgtModel.getRowCount() - 1);
+	                }
+	                List<TradeOrder> openningLs = new ArrayList<TradeOrder>();
+	                openningLs.addAll(kanban.openningCache.values());//
+	                for (TradeOrder to : openningLs) {
+	//                	System.out.println(FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss").format(to.getCreatedTs()));
+	                  String[] rowData = { ""+to.getId(), ""+to.getTradeType(),
+	                  to.getSubmitPrice(), to.getNowAmount(),
+	                  to.getOrigAmount(),getTsStr(to.getCreatedTs()),
+	                  ""+to.getStatus() };
+	                    rgtModel.addRow(rowData);
+	                }
+	                
+	                //
+	                //解析订单结果
+	                //{ "id", "type", "price", "avg_price", "amount", "amount_original", "date", "status" }
+	                while (tableModel.getRowCount() > 0) {
+	                    tableModel.removeRow(tableModel.getRowCount() - 1);
+	                }
+	                for (TradeOrder to : kanban.closedOrders) {  //FIXME 重连后，kanban.closedOrders,kanban.openningCache 都没有数据更新了。 貌似是probe在重连时ok_cny_realtrades不连接的[{"channel":"ok_cny_realtrades","success":"true"}]
+	//                	System.out.println(FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss").format(to.getCreatedTs()));
+	                    String[] rowData = { ""+to.getId(), ""+to.getTradeType(),
+	                            to.getSubmitPrice(),to.getStrikePrice(), to.getNowAmount(),
+	                            to.getOrigAmount(),getTsStr(to.getCreatedTs()),
+	                            ""+to.getStatus() };
+	                    tableModel.addRow(rowData);
+	                }
+            	}catch (Exception e) {
+					e.printStackTrace();
+				}
+            	//
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+            	
             }
 
         }
@@ -518,6 +529,7 @@ public class SimpleTradePane {
         String[] lftCn = { "trade_id", "price", "amount", "type", "date"};
         lftModel = new DefaultTableModel(null, lftCn);
         JTable lftTable = new JTable(lftModel);
+        
         lftTable.setEnabled(false);
         lftTable.setFocusable(false);
         //        RowSorter<TableModel> sorter = new TableRowSorter<TableModel>(lftModel);
