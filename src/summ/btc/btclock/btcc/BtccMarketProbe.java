@@ -31,7 +31,6 @@ import summ.btc.btclock.Kanban.Depth;
 import summ.btc.btclock.data.TickRecord;
 import summ.btc.btclock.data.TradeRecord;
 import summ.btc.btclock.data.TradeTypeEnum;
-import summ.btc.sample.BTCCDataMain;
 
 /**
  * 获取当前行情相关数据 trade 当前交易 grouporder 市场深度或买5卖5
@@ -168,7 +167,7 @@ public class BtccMarketProbe implements MarketProbable{
 			//
 			IO.Options opt = new IO.Options();
 			opt.reconnection = true;
-			Logger.getLogger(BTCCDataMain.class.getName()).setLevel(Level.FINE);
+			Logger.getLogger(BtccMarketProbe.class.getName()).setLevel(Level.FINE);
 			socket = IO.socket("https://websocket.btcchina.com", opt); // 地址
 			socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {// 链接上
 						// BTCCDataMain sm = new BTCCDataMain();
@@ -262,7 +261,7 @@ public class BtccMarketProbe implements MarketProbable{
 					});
 			socket.connect();
 		} catch (URISyntaxException ex) {
-			Logger.getLogger(BTCCDataMain.class.getName()).log(Level.SEVERE,
+			Logger.getLogger(BtccMarketProbe.class.getName()).log(Level.SEVERE,
 					null, ex);
 		} finally {
 
