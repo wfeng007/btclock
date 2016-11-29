@@ -4,12 +4,7 @@
 package summ.btc.btclock;
 
 import java.math.BigDecimal;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.springframework.context.support.AbstractApplicationContext;
@@ -17,6 +12,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import summ.btc.btclock.Kanban.Depth;
 import summ.btc.btclock.MarketTrader.TradeOrderWaiter;
+import summ.btc.btclock.data.Innings;
 import summ.btc.btclock.data.TradeOrder;
 import summ.btc.btclock.data.TradeOrderStatusEnum;
 
@@ -74,24 +70,24 @@ public class SimpleClockDecider {
 //    	return ft;
 //    }
     
-    public static class Innings {
-    	public TradeOrder entry;
-    	public TradeOrder exit;
-    	public BigDecimal profit;
-    	public BigDecimal parseProfit(){
-    		BigDecimal exitOrigAmBd=new BigDecimal(exit.getOrigAmount());
-    		BigDecimal exitStriPrBd=new BigDecimal(exit.getStrikePrice());
-    		BigDecimal entryOrigAmBd=new BigDecimal(entry.getOrigAmount());
-    		BigDecimal entryStriPrBd=new BigDecimal(entry.getStrikePrice());
-    		
-    		BigDecimal exitTotal= exitOrigAmBd.multiply(exitStriPrBd);
-    		BigDecimal entryTotal= entryOrigAmBd.multiply(entryStriPrBd);
-			BigDecimal profit=exitTotal.subtract(entryTotal);
-			profit.setScale(8, BigDecimal.ROUND_HALF_UP);
-			this.profit=profit;
-			return profit;
-    	}
-    }
+//    public static class Innings {
+//    	public TradeOrder entry;
+//    	public TradeOrder exit;
+//    	public BigDecimal profit;
+//    	public BigDecimal parseProfit(){
+//    		BigDecimal exitOrigAmBd=new BigDecimal(exit.getOrigAmount());
+//    		BigDecimal exitStriPrBd=new BigDecimal(exit.getStrikePrice());
+//    		BigDecimal entryOrigAmBd=new BigDecimal(entry.getOrigAmount());
+//    		BigDecimal entryStriPrBd=new BigDecimal(entry.getStrikePrice());
+//    		
+//    		BigDecimal exitTotal= exitOrigAmBd.multiply(exitStriPrBd);
+//    		BigDecimal entryTotal= entryOrigAmBd.multiply(entryStriPrBd);
+//			BigDecimal profit=exitTotal.subtract(entryTotal);
+//			profit.setScale(8, BigDecimal.ROUND_HALF_UP);
+//			this.profit=profit;
+//			return profit;
+//    	}
+//    }
     
 
     final class SimpleClockRunner implements Runnable {

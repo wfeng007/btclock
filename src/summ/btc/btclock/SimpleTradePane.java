@@ -64,12 +64,14 @@ public class SimpleTradePane {
 	static JPanel topPanel;
 	static JPanel middlePanel;
 	static JPanel bottomPanel;
+
 	static BidAskPanel bidAskPanel;
 	static JTextField amountTf;
 	static Tradable trader;
 	static Kanban kanban;
 	static MarketProbable marketProbe;
-	static DefaultTableModel tableModel;
+	static DefaultTableModel btmLeft;
+	static DefaultTableModel btmRight;
 	static DefaultTableModel lftModel;
 	static DefaultTableModel rgtModel;
 	static String tradeAmount = "0.096";
@@ -405,8 +407,8 @@ public class SimpleTradePane {
 	                //
 	                //解析订单结果
 	                //{ "id", "type", "price", "avg_price", "amount", "amount_original", "date", "status" }
-	                while (tableModel.getRowCount() > 0) {
-	                    tableModel.removeRow(tableModel.getRowCount() - 1);
+	                while (btmLeft.getRowCount() > 0) {
+	                    btmLeft.removeRow(btmLeft.getRowCount() - 1);
 	                }
 	                for (TradeOrder to : kanban.closedOrders) {  //FIXME 重连后，kanban.closedOrders,kanban.openningCache 都没有数据更新了。 貌似是probe在重连时ok_cny_realtrades不连接的[{"channel":"ok_cny_realtrades","success":"true"}]
 	//                	System.out.println(FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss").format(to.getCreatedTs()));
@@ -414,7 +416,7 @@ public class SimpleTradePane {
 	                            to.getSubmitPrice(),to.getStrikePrice(), to.getNowAmount(),
 	                            to.getOrigAmount(),getTsStr(to.getCreatedTs()),
 	                            ""+to.getStatus() };
-	                    tableModel.addRow(rowData);
+	                    btmLeft.addRow(rowData);
 	                }
             	}catch (Exception e) {
 					e.printStackTrace();
@@ -553,20 +555,36 @@ public class SimpleTradePane {
         middlePanel.add(rgtScrollPane);
         //        middlePanel.add(Box.createVerticalStrut(10));
     }
+    
+    
 
     static void initBottomPane() {
         bottomPanel = new JPanel();
+//        bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS)); //上下排列
+        bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));//左右排列
+        //
         String[] columnName = { "id", "type", "price", "avg_price", "amount", "amount_original", "date", "status" };//
-        tableModel = new DefaultTableModel(null, columnName);
-        JTable table = new JTable(tableModel);
-        table.setEnabled(false);
-        table.setFocusable(false);
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
-        bottomPanel.add(Box.createVerticalStrut(10));
-        bottomPanel.add(scrollPane);
-        bottomPanel.add(Box.createVerticalStrut(10));
+        btmLeft = new DefaultTableModel(null, columnName);
+        JTable btmLeftTable = new JTable(btmLeft);
+        btmLeftTable.setEnabled(false);
+        btmLeftTable.setFocusable(false);
+        JScrollPane btmLeftPanel = new JScrollPane(btmLeftTable);
+        btmLeftPanel.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+      
+        
+        //
+        String[] rightcolumnName = { "innings id","type", "bid avg_price", "bid amount", "ask avg_price", "ask amount", "profit","status",  };//
+        btmRight = new DefaultTableModel(null, rightcolumnName);
+        JTable btmRightTable = new JTable(btmRight);
+        btmRightTable.setEnabled(false);
+        btmRightTable.setFocusable(false);
+        JScrollPane btmRightPanel = new JScrollPane(btmRightTable);
+        btmRightPanel.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+//
+//        bottomPanel.add(Box.createVerticalStrut(10));//垂直间隔
+        bottomPanel.add(btmLeftPanel);
+//        bottomPanel.add(Box.createVerticalStrut(10));
+        bottomPanel.add(btmRightPanel);
     }
 
     public static void main(String[] args) {

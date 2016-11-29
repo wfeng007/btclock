@@ -14,6 +14,8 @@ import com.okcoin.rest.stock.IStockRestApi;
 import com.okcoin.rest.stock.impl.StockRestApi;
 
 /**
+ * TODO 还没有完成,具体作用可能是想从probe与trader拆分出链接服务器的功能。
+ * 
  * @author wfeng007
  * @date 2016-10-23 上午02:46:17
  */

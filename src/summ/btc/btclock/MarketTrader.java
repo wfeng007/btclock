@@ -32,7 +32,7 @@ public class MarketTrader {
 	}
 
 	/**
-	 * 下订单，并返回一个可以担待订单结束的句柄
+	 * 下订单，并返回一个可以等待订单结束的句柄
 	 */
 	public TradeOrderWaiter sellWaiter(String price, String amount) {
 		TradeOrder order = offerSellOrder(price, amount);
@@ -184,7 +184,8 @@ public class MarketTrader {
 	
 	
 	/**
-	 * 
+	 * 监控等待订单执行的句柄；执行的当前线程block；
+	 * 可以打断；
 	 * @author wfeng007
 	 * 
 	 */
