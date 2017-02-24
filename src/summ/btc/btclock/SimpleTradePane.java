@@ -3,9 +3,11 @@
  */
 package summ.btc.btclock;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -47,7 +49,11 @@ import org.jfree.chart.labels.StandardCategoryItemLabelGenerator;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.BarRenderer;
+import org.jfree.chart.renderer.category.LineAndShapeRenderer;
+import org.jfree.chart.title.TextTitle;
 import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.ui.HorizontalAlignment;
+import org.jfree.ui.RectangleEdge;
 import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.AbstractApplicationContext;
@@ -382,16 +388,23 @@ public class SimpleTradePane {
 	                            bid1.getSubmitPrice(), bid1.getOrigAmount());
 	                }
 	                //TODO　刷新市场深度tob
-	                List<TradeOrder> askLs=nowDe.askList;
+	                List<TradeOrder> askLs=nowDe.askList; 
 //	                depthChartData=new DefaultCategoryDataset();
 	                depthChartData.clear();
-	                for (int i = 9<askLs.size()?9:askLs.size(); i >= 0; i--) {
+	                for (int i = 14<askLs.size()?14:askLs.size(); i >= 0; i--) {
 	                	TradeOrder askOdr=askLs.get(i);
 	                	String amo=askOdr.getOrigAmount();
 //	                	new Integer(amo);
 	                	depthChartData.addValue(Double.valueOf(amo), "ask(offer)" ,  askOdr.getSubmitPrice());
 					}
-	                depthChart.fireChartChanged();//刷新
+	                List<TradeOrder> bidLs=nowDe.bidList;
+	                for (int i = 0; i<15;  i++) {
+	                	TradeOrder askOdr=bidLs.get(i);
+	                	String amo=askOdr.getOrigAmount();
+//	                	new Integer(amo);
+	                	depthChartData.addValue(Double.valueOf(amo), "bid" ,  askOdr.getSubmitPrice());
+					}
+	                depthChart.fireChartChanged();//刷新展示
 	
 	                //刷新 实时交易数据
 	//           // "trade_id", "price", "amount", "type", "date"
@@ -501,15 +514,23 @@ public class SimpleTradePane {
         
         //深度面板 及数据体
         depthChartData = new DefaultCategoryDataset();
-//        DataSet.addValue(250, "1", "offer");
-//        DataSet.addValue(250, "2", "offer");
-//        DataSet.addValue(250, "3", "offer");
-//        DataSet.addValue(420, "1", "bid");
-//        DataSet.addValue(420, "2", "bid");
-//        DataSet.addValue(420, "3", "bid");
-        depthChart = ChartFactory.createBarChart(null,
-        "深", "量", depthChartData, PlotOrientation.HORIZONTAL,
+        depthChart = ChartFactory.createLineChart(null,
+        null, null, depthChartData, PlotOrientation.HORIZONTAL,
         false, false, false);
+//        depthChart.setTitle(new TextTitle("深度", new Font("黑体", Font.ITALIC, 22)));
+		// 设置图表的子标题  
+//        depthChart.addSubtitle(new TextTitle("精度0.01"));  
+//        TextTitle texttitle = new TextTitle("日期: " + new Date());  
+//        texttitle.setFont(new Font("黑体", 0, 10));  
+//        texttitle.setPosition(RectangleEdge.BOTTOM);  
+//        // 设置标题向右对齐  
+//        texttitle.setHorizontalAlignment(HorizontalAlignment.RIGHT);  
+//        // 添加图表的子标题  
+//        depthChart.addSubtitle(texttitle); 
+        
+        // 设置图表的背景色为白色  
+        depthChart.setBackgroundPaint(Color.white);  
+        
         CategoryPlot plot = depthChart.getCategoryPlot();
         // 2,设置详细图表的显示细节部分的背景颜色
         plot.setBackgroundPaint(Color.PINK);
@@ -521,18 +542,35 @@ public class SimpleTradePane {
         plot.setRangeGridlinePaint(Color.black);
         //6,设置是否显示水平网格线
         plot.setRangeGridlinesVisible(false);
-        BarRenderer renderer = new BarRenderer();
-        renderer.setMaximumBarWidth(0.05d);
-        renderer.setItemMargin(0.01d); 
-//        renderer.setIncludeBaseInRange(true);
-//        renderer.setBaseItemLabelGenerator(
-//                new StandardCategoryItemLabelGenerator());
-//        renderer.setBaseItemLabelsVisible(true);
-        plot.setRenderer(renderer);
-//        chart.fireChartChanged(); //数据变化
+        
+       
+        // 获显示线条对象  设置
+        LineAndShapeRenderer lineandshaperenderer = (LineAndShapeRenderer) plot  
+                .getRenderer();  
+        //
+        lineandshaperenderer.setSeriesPaint(0, Color.RED);
+        lineandshaperenderer.setSeriesPaint(1, Color.green);
+        //
+//        lineandshaperenderer.setBaseShapesVisible(true);//折线拐点
+//        lineandshaperenderer.setDrawOutlines(true);  //拐点是否有边框
+//        lineandshaperenderer.setUseFillPaint(true);  //拐点是否填充
+        lineandshaperenderer.setBaseFillPaint(Color.white);   //拐点填充颜色
+        // 设置折线加粗  
+        lineandshaperenderer.setSeriesStroke(0, new BasicStroke(2F));  
+//        lineandshaperenderer.setSeriesOutlineStroke(0, new BasicStroke(2.0F));  
+        lineandshaperenderer.setSeriesStroke(1, new BasicStroke(2F)); 
+        // 设置折线拐点  series 表示不同分类系列的设置拐点样式
+//        lineandshaperenderer.setSeriesShape(0,  
+//                new java.awt.geom.Ellipse2D.Double(-5D, -5D, 5D, 5D));
+//        lineandshaperenderer.setSeriesShape(1,  
+//                new java.awt.geom.Ellipse2D.Double(-5D, -5D, 5D, 5D));  
+        
+//        plot.setRenderer(renderer); 
+        
+//        chart.fireChartChanged(); //数据变化刷新展示
         //绘制面板
         ChartPanel cpanel = new ChartPanel(depthChart,true);
-
+        cpanel.setPreferredSize(new Dimension(200, 350));
 
         //放入top面板
         topPanel.add(Box.createVerticalStrut(10));//10px高空白

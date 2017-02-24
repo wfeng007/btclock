@@ -39,8 +39,8 @@ public class Kanban {
      * @author wfeng007
      */
     static public  class Depth{
-    	public List<TradeOrder> bidList=new ArrayList<TradeOrder>();//0位置为买1
-    	public List<TradeOrder> askList=new ArrayList<TradeOrder>();//0位置为卖1
+    	public List<TradeOrder> bidList=new ArrayList<TradeOrder>();//0位置为买1 价格从大到小排序
+    	public List<TradeOrder> askList=new ArrayList<TradeOrder>();//0位置为卖1 价格从小到大排序
 //    	int size;
     	public Date timestamp;
     }
