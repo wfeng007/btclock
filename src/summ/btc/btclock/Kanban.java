@@ -29,11 +29,15 @@ public class Kanban {
     //市场情况记录 （包括最基本的买一卖一信息） 打点记录
     public CircularFifoQueue<TickRecord> tickRecords = new CircularFifoQueue<TickRecord>(10);
     //当前买5卖5或市场深度
-    public Depth                    nowDepth=new Depth();
+    public Depth                    nowDepth=new Depth(); 
     
     //一回合买卖的记录组
     public CircularFifoQueue<Innings> inningRecords = new CircularFifoQueue<Innings>(100);
     
+    /**
+     * top order book 数据形式
+     * @author wfeng007
+     */
     static public  class Depth{
     	public List<TradeOrder> bidList=new ArrayList<TradeOrder>();//0位置为买1
     	public List<TradeOrder> askList=new ArrayList<TradeOrder>();//0位置为卖1

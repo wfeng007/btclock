@@ -32,6 +32,18 @@
 		</repository> <!-- -->
 	</repositories>
 	<dependencies>
+		<!-- jfreechart -->
+		<dependency>
+		   <groupId>jfree</groupId>
+		   <artifactId>jfreechart</artifactId>
+		   <version>1.0.9</version>
+		</dependency>
+		<dependency>
+		   <groupId>jfree</groupId>
+		   <artifactId>jcommon</artifactId>
+		   <version>1.0.15</version>
+		</dependency>
+		
 		<dependency>
 			<groupId>io.socket</groupId>
 			<artifactId>socket.io-client</artifactId>
@@ -125,6 +137,18 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<!-- jfreechart -->
+			<dependency>
+			   <groupId>jfree</groupId>
+			   <artifactId>jfreechart</artifactId>
+			   <version>1.0.9</version>
+			</dependency>
+			<dependency>
+			   <groupId>jfree</groupId>
+			   <artifactId>jcommon</artifactId>
+			   <version>1.0.15</version>
+			</dependency>
+		
 			<dependency>
 				<groupId>io.socket</groupId>
 				<artifactId>socket.io-client</artifactId>

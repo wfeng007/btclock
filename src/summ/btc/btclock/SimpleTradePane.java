@@ -40,6 +40,14 @@ import javax.swing.table.DefaultTableModel;
 
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.FastDateFormat;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.labels.StandardCategoryItemLabelGenerator;
+import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.renderer.category.BarRenderer;
+import org.jfree.data.category.DefaultCategoryDataset;
 import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.AbstractApplicationContext;
@@ -75,6 +83,9 @@ public class SimpleTradePane {
 	static DefaultTableModel lftModel;
 	static DefaultTableModel rgtModel;
 	static String tradeAmount = "0.096";
+	//
+	static DefaultCategoryDataset depthChartData ;
+	static JFreeChart depthChart;
 
     //    static JPanel middlePanel;
 
@@ -370,6 +381,17 @@ public class SimpleTradePane {
 	                    SimpleTradePane.bidAskPanel.setBidAsk(ask1.getSubmitPrice(), ask1.getOrigAmount(),
 	                            bid1.getSubmitPrice(), bid1.getOrigAmount());
 	                }
+	                //TODO　刷新市场深度tob
+	                List<TradeOrder> askLs=nowDe.askList;
+//	                depthChartData=new DefaultCategoryDataset();
+	                depthChartData.clear();
+	                for (int i = 9<askLs.size()?9:askLs.size(); i >= 0; i--) {
+	                	TradeOrder askOdr=askLs.get(i);
+	                	String amo=askOdr.getOrigAmount();
+//	                	new Integer(amo);
+	                	depthChartData.addValue(Double.valueOf(amo), "ask(offer)" ,  askOdr.getSubmitPrice());
+					}
+	                depthChart.fireChartChanged();//刷新
 	
 	                //刷新 实时交易数据
 	//           // "trade_id", "price", "amount", "type", "date"
@@ -476,6 +498,41 @@ public class SimpleTradePane {
 
         //买一卖一面板
         bidAskPanel.init();
+        
+        //深度面板 及数据体
+        depthChartData = new DefaultCategoryDataset();
+//        DataSet.addValue(250, "1", "offer");
+//        DataSet.addValue(250, "2", "offer");
+//        DataSet.addValue(250, "3", "offer");
+//        DataSet.addValue(420, "1", "bid");
+//        DataSet.addValue(420, "2", "bid");
+//        DataSet.addValue(420, "3", "bid");
+        depthChart = ChartFactory.createBarChart(null,
+        "深", "量", depthChartData, PlotOrientation.HORIZONTAL,
+        false, false, false);
+        CategoryPlot plot = depthChart.getCategoryPlot();
+        // 2,设置详细图表的显示细节部分的背景颜色
+        plot.setBackgroundPaint(Color.PINK);
+        // 3,设置垂直网格线颜色
+        plot.setDomainGridlinePaint(Color.black);
+        //4,设置是否显示垂直网格线
+        plot.setDomainGridlinesVisible(true);
+        //5,设置水平网格线颜色
+        plot.setRangeGridlinePaint(Color.black);
+        //6,设置是否显示水平网格线
+        plot.setRangeGridlinesVisible(false);
+        BarRenderer renderer = new BarRenderer();
+        renderer.setMaximumBarWidth(0.05d);
+        renderer.setItemMargin(0.01d); 
+//        renderer.setIncludeBaseInRange(true);
+//        renderer.setBaseItemLabelGenerator(
+//                new StandardCategoryItemLabelGenerator());
+//        renderer.setBaseItemLabelsVisible(true);
+        plot.setRenderer(renderer);
+//        chart.fireChartChanged(); //数据变化
+        //绘制面板
+        ChartPanel cpanel = new ChartPanel(depthChart,true);
+
 
         //放入top面板
         topPanel.add(Box.createVerticalStrut(10));//10px高空白
@@ -483,6 +540,7 @@ public class SimpleTradePane {
         topPanel.add(Box.createVerticalStrut(10));//10px高空白
         topPanel.add(bidAskPanel);
         topPanel.add(Box.createVerticalStrut(10));//10px高空白
+
         
         //交易btc量输入框
         amountTf=new JTextField();
@@ -516,12 +574,14 @@ public class SimpleTradePane {
 				c.setBackground(Color.green);
 			}
 		});
-        
-        
         topPanel.addKeyListener(new TradeKeyListener());//
         
         
- 
+        
+        //tob depth
+        topPanel.add(Box.createVerticalStrut(10));//10px高空白
+        topPanel.add(cpanel);//chart面板放入主面板
+        
     }
 
     static void initMiddlePane() {

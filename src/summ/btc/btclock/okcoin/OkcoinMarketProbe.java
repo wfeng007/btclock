@@ -69,7 +69,7 @@ public class OkcoinMarketProbe implements MarketProbable,WebSocketService{
 		client.addChannel("ok_btccny_trades_v1"); //
 		//
 		//个人现货交易订单变化 需要账户
-		client.realTrades(apiKey, secretKey); //FIXME 这个在断开后不会重连？
+		client.realTrades(apiKey, secretKey); //这个在断开后不会重连？ 已修复为可重连
 //		client.addChannel("ok_cny_realtrades");
 	}
 	
@@ -138,7 +138,6 @@ public class OkcoinMarketProbe implements MarketProbable,WebSocketService{
 				
 			}else if("ok_btccny_depth".equals(channel)){//市场深度20条
 //				System.out.println(msg);
-				//1
 				Depth newDp=new Depth();
 				JSONObject depthJs=outerJs.optJSONObject("data");
 				if(depthJs==null){

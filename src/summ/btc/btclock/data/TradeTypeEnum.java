@@ -21,7 +21,7 @@ public enum TradeTypeEnum {
         this.code = code;
         this.msg = msg;
     }
-
+    
     public static TradeTypeEnum getById(int id) {
         for (TradeTypeEnum type : TradeTypeEnum.values()) {
             if (type.getId() == id) {
